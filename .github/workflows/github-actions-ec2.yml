@@ -1,9 +1,9 @@
-name: Deploy to EC2 (Static Website)
+name: Deploy HTML/CSS/JS to EC2
 
 on:
   push:
     branches:
-      - main  # Runs when code is pushed to the main branch
+      - main
 
 jobs:
   deploy:
@@ -20,29 +20,6 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy to EC2
+      - name: Deploy files to EC2
         run: |
-          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e  # Stop execution on error
-
-          # Navigate to web server directory (Modify this path)
-          cd /var/www/html || exit
-
-          # Remove old files
-          rm -rf *
-
-          # Pull the latest changes
-          git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git temp_folder
-
-          # Move files to the correct directory
-          mv temp_folder/* .
-          rm -rf temp_folder
-
-          # Ensure correct permissions
-          sudo chown -R www-data:www-data /var/www/html
-          sudo chmod -R 755 /var/www/html
-
-          # Restart the web server (Modify if using Apache/Nginx)
-          sudo systemctl restart apache2 || sudo systemctl restart nginx
-
-          EOF
+          scp -i ~/.ssh/id_rsa -r * ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/var/www/html/
