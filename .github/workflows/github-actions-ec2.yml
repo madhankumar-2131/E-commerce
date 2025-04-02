@@ -1,4 +1,4 @@
-name: Deploy to EC2
+name: Deploy to EC2 (Static Website)
 
 on:
   push:
@@ -22,21 +22,27 @@ jobs:
 
       - name: Deploy to EC2
         run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+          ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
           set -e  # Stop execution on error
-          
-          # Update system and install dependencies
-          sudo apt update && sudo apt install -y docker docker-compose git
 
-          # Navigate to project directory
-          cd ${{ secrets.EC2_PROJECT_DIR }}
+          # Navigate to web server directory (Modify this path)
+          cd /var/www/html || exit
 
-          # Pull latest code from GitHub
-          git fetch --all
-          git reset --hard origin/main
-          git pull origin main --force
+          # Remove old files
+          rm -rf *
 
-          # Restart application using Docker Compose
-          docker-compose down
-          docker-compose up --build -d
+          # Pull the latest changes
+          git clone https://github.com/YOUR_USERNAME/YOUR_REPO.git temp_folder
+
+          # Move files to the correct directory
+          mv temp_folder/* .
+          rm -rf temp_folder
+
+          # Ensure correct permissions
+          sudo chown -R www-data:www-data /var/www/html
+          sudo chmod -R 755 /var/www/html
+
+          # Restart the web server (Modify if using Apache/Nginx)
+          sudo systemctl restart apache2 || sudo systemctl restart nginx
+
           EOF
