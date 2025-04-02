@@ -3,7 +3,7 @@ name: Deploy to EC2
 on:
   push:
     branches:
-      - main  # Triggers only on push to main branch
+      - main
 
 jobs:
   deploy:
@@ -23,10 +23,20 @@ jobs:
       - name: Deploy to EC2
         run: |
           ssh -i ~/.ssh/id_rsa ubuntu@${{ secrets.EC2_HOST }} << 'EOF'
-          set -e  # Exit on error
+          set -e
+          
+          # Ensure necessary services are running
+          sudo apt update && sudo apt install -y docker docker-compose
+
+          # Navigate to project directory
           cd /var/www/my-app
+
+          # Pull latest changes
           git fetch --all
           git reset --hard origin/main
           git pull origin main --force
+
+          # Restart application using Docker Compose
+          docker-compose down
           docker-compose up --build -d
           EOF
